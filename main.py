@@ -13,6 +13,8 @@ bot.start_time = time.time()
 @bot.event
 async def on_ready():
     print(f"✅ Bot logged in as {bot.user}")
+    print(f"✅ Bot ID: {bot.user.id}")
+    print(f"✅ Prefix: {PREFIX}")
     await bot.change_presence(
         activity=discord.Activity(
             type=discord.ActivityType.watching,
@@ -21,13 +23,37 @@ async def on_ready():
     )
     
     # Load all cogs
+    cogs_loaded = 0
+    cogs_failed = 0
+    
     for filename in os.listdir("./cogs/commands"):
         if filename.endswith(".py") and filename != "__init__.py":
             try:
                 await bot.load_extension(f"cogs.commands.{filename[:-3]}")
                 print(f"✅ Loaded cogs.commands.{filename[:-3]}")
+                cogs_loaded += 1
             except Exception as e:
                 print(f"❌ Failed to load cogs.commands.{filename[:-3]}: {e}")
+                cogs_failed += 1
+    
+    print(f"\n✅ Total Cogs Loaded: {cogs_loaded}")
+    if cogs_failed > 0:
+        print(f"⚠️  Cogs Failed: {cogs_failed}")
+    print(f"✅ Bot is ready!\n")
+
+@bot.event
+async def on_command_error(ctx, error):
+    """Handle command errors"""
+    if isinstance(error, commands.CommandNotFound):
+        return
+    
+    embed = discord.Embed(
+        title="❌ Error",
+        description=f"An error occurred: {str(error)}",
+        color=0xED4245
+    )
+    await ctx.send(embed=embed)
+    print(f"Error in command {ctx.command}: {error}")
 
 @bot.command(name="help")
 async def help_command(ctx):
@@ -90,4 +116,10 @@ async def help_command(ctx):
     await ctx.send(embed=embed)
 
 if __name__ == "__main__":
-    bot.run(TOKEN)
+    try:
+        print("🚀 Starting Discord Bot...")
+        print(f"✅ Token loaded: {TOKEN[:20]}...")
+        print(f"✅ Owner ID: {OWNER_ID}\n")
+        bot.run(TOKEN)
+    except Exception as e:
+        print(f"❌ Failed to start bot: {e}")
